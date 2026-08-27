@@ -1,0 +1,16 @@
+(설계 단계 예시 트레이스 — 구현 전 예상 시나리오. 테스트 문항 #2)
+
+[요청] TQQQ 지금 사도 돼?
+[선택한 도구] get_fg_signal → check_cooldown (순서대로 2회 호출)
+[인자]
+  get_fg_signal: {} (없음)
+  check_cooldown: {"ticker": "TQQQ"}
+[반환 근거]
+  get_fg_signal → {"date": "2026-08-27", "fg_score": 18, "rating": "extreme fear",
+                    "signal_label": "TQQQ 매수 50%", "is_stale": false}
+  check_cooldown → {"ticker": "TQQQ", "in_cooldown": true, "last_buy_date": "2026-08-25",
+                     "elapsed_trading_days": 2, "reason": "3거래일 쿨다운 중 (1거래일 남음)"}
+[최종 답] 오늘 F&G는 18로 매수 신호(50%) 조건이지만, TQQQ는 2026-08-25에 매수하셔서
+          아직 쿨다운 중입니다(3거래일 중 2일 경과, 1거래일 남음). 지금은 매수 신호 조건은
+          맞지만 쿨다운 때문에 매수 실행 대상은 아닙니다.
+[중단·이관 이유] 해당 없음 (정상 완료 — 신호와 쿨다운을 종합해서 답변)
