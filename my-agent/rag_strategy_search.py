@@ -72,10 +72,22 @@ async def main():
     llm = ChatOllama(model="qwen3.5:0.8b", temperature=0, reasoning=False)
     llm_with_tools = llm.bind_tools([search_strategy_rule])
 
-    question = "커버드콜은 언제 얼마나 추가로 사?"
+    question = input("질문을 입력하세요 (예: 커버드콜은 언제 얼마나 추가로 사?): ")
     r1 = await llm_with_tools.ainvoke(question)
     print("[요청]", question)
     print("[1] 모델의 요청:", [(tc["name"], tc["args"]) for tc in r1.tool_calls])
+
+    # 실측(2026-08-27)에서 모델이 도구를 아예 안 부른 사례가 나와서 방어 코드를 추가함 —
+    # 원래는 r1.tool_calls[0]가 항상 있다고 가정했는데, 소형 모델은 종종 도구 없이
+    # 바로 답하려 한다. 이 경우 크래시 대신 실패로 기록하고 종료한다.
+    if not r1.tool_calls:
+        # 실측(2026-08-27)에서 모델이 도구 없이 지어낸(사실과 다른) 답을 낸 사례가 나옴
+        # (trace-05-hallucination.txt). 그래서 모델의 날 것 답변은 개발자 로그에만 남기고,
+        # 사용자에게는 절대 그대로 보여주지 않는다.
+        print("[개발자 로그] 모델이 도구를 선택하지 않음. 근거 없는 답일 수 있어 사용자에게 숨김:")
+        print("  ", r1.content)
+        print("[사용자에게 보여줄 답] 죄송합니다, 이 질문은 확인이 필요합니다. 다시 질문해주시겠어요?")
+        return
 
     result = search_strategy_rule.invoke(r1.tool_calls[0]["args"])
     print("[2] 하네스의 실행 결과:", json.dumps(result, ensure_ascii=False, indent=2))
